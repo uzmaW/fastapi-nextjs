@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from ..db.conn import get_db
 from ..db.schemas.user import User
 from ..repositories.UserRepository import UserRepository
-from ..security.auth import create_access_token
+from ..security.auth import create_access_token, get_current_user
 from ..config.mt_config import MtConfig as mt_config 
 
 auth_router = APIRouter()
@@ -24,8 +24,12 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     access_token_expires = timedelta(minutes=mt_config.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        user_id=user.id,email=user.email, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+@auth_router.post("/auth/logout")
+async def logout(user_id: str = Depends(get_current_user)):
+    # invalidate token
     
+    return {"message": "Logout successful"}
