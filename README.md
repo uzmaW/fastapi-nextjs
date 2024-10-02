@@ -1,4 +1,4 @@
-# FastAPI-NextJS Project
+# Mart Project
 
 This project is a web application built using FastAPI for the backend and Next.js for the frontend. It includes features such as Kafka consumer integration and email sending functionality.
 
