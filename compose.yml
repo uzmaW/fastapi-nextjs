@@ -1,0 +1,123 @@
+services:
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    restart: always
+    ports:
+      - "19092:9092"
+      - "9101:9101"
+      - "29092:29092"
+      - "29093:29093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      #KAFKA_ENABLE_KRAFT: "true"
+      KAFKA_KRAFT_MODE: "true"
+      #KAFKA_KRAFT_BOOTSTRAPPER_PORT: 29092
+      CLUSTER_ID: "QzKtz5DvSB6L3qLHarMz0g"
+      KAFKA_NODE_ID: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:29093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
+      KAFKA_LISTENERS: CONTROLLER://kafka:29093,PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+          
+      
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    
+  schema-registry:
+    image: confluentinc/cp-schema-registry:latest
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      #SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'localhost:29092'
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+      
+  redis:
+    image: redis:latest
+    volumes:
+      - redis_data:/data
+    environment:
+      REDIS_PASSWORD: p@55word
+      REDIS_SERVER: localhost
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgress
+      POSTGRES_DB: j_mart
+      POSTGRES_SERVER: localhost
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  
+  web:
+    build: 
+      context: .
+      dockerfile: ./backend/mart/Dockerfile
+    ports:
+      - "8000:8000"
+      - "514:514/udp"
+    env_file:
+      - ./backend/mart/app/.env.local
+    volumes:
+
+      - ./backend/mart:/app
+    depends_on:
+      - kafka
+      - redis
+      - postgres
+    #command: >
+    #  uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+  # notification_service:
+  #   build: ./backend/notifications
+  #   ports:
+  #     - "8004:8004"
+  #   depends_on:
+  #     - kafka
+  #   environment:
+  #     KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+  # jenkins:
+  #   image: jenkins/jenkins:lts
+  #   ports:
+  #     - "8080:8080"
+  #     - "50000:50000"
+  #   volumes:
+  #     - jenkins_home:/var/jenkins_home
+# tests:
+#     build: .
+#     command: pytest
+#     environment:
+#       - SECRET_KEY=your-secret-key
+#       - DATABASE_URL=postgresql://user:password@localhost:5434/dbname
+#       - DATABASE_URL_SSL_DISABLE=postgresql://user:password@localhost:5434/dbname
+#       - POSTGRES_DB=your-db
+#       - POSTGRES_USER=your-user
+#       - POSTGRES_PASSWORD=your-password
+#       - POSTGRES_SERVER=your-server
+#     depends_on:
+#       - web
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  #jenkins_home:

@@ -1,0 +1,9 @@
+.env
+.env.local
+.env.prod
+.env.test
+node_modules
+_build
+__pycache__
+.vscode
+.venv
